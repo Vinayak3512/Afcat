@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFCAT 2026 Mission Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <script src="data.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            navy: '#0f172a',
+                            blue: '#3b82f6',
+                            sky: '#0ea5e9',
+                            bg: '#f8fafc'
+                        }
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'float': '0 20px 40px -10px rgba(0, 0, 0, 0.15)',
+                        'glow': '0 0 25px rgba(59, 130, 246, 0.25)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(15px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8fafc; color: #334155; }
+        
+        /* Smooth Transitions */
+        .tab-content { display: none; opacity: 0; transform: translateY(10px); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
+
+        /* Nav Pills */
+        .nav-item { 
+            transition: all 0.3s ease; 
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+        }
+        .nav-item:hover { color: white; }
+        .nav-item.active { color: white; }
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -6px; left: 50%; transform: translateX(-50%);
+            width: 24px; height: 3px;
+            background: #3b82f6;
+            border-radius: 10px;
+            box-shadow: 0 0 12px #3b82f6;
+        }
+
+        /* CARD STYLES */
+        .topic-card {
+            background: white;
+            border-radius: 24px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 220px; /* Bigger Cards */
+        }
+        
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.5;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            border-color: #93c5fd;
+        }
+
+        /* Jet Watermark */
+        .jet-bg {
+            position: absolute;
+            bottom: -20px;
+            right: -20px;
+            width: 140px;
+            height: 140px;
+            opacity: 0.03;
+            transform: rotate(-15deg);
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+        .topic-card:hover .jet-bg {
+            opacity: 0.08;
+            transform: rotate(0deg) scale(1.1);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f1f5f9; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Buttons */
+        /* AI Explain Button */
+        .ai-explain-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ai-explain-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .ai-explain-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .ai-explain-btn:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4), 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .ai-explain-btn:active {
+            transform: translateY(0);
+        }
+
+        .ai-explain-btn-text {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .ai-explain-btn-icon {
+            font-size: 1.1em;
+            animation: pulse-icon 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .ai-explain-btn:hover .ai-explain-btn-icon {
+            animation: bounce-icon 0.6s ease-in-out;
+        }
+
+        @keyframes bounce-icon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* AI Explanation Box */
+        .ai-expl {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border: 1px solid #bbf7d0;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            border-radius: 1.5rem;
+        }
+
+        .ai-expl-content {
+            color: #065f46;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .ai-expl-content strong {
+            color: #047857;
+            font-weight: 700;
+        }
+
+        .expl {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%) !important;
+            border: 1px solid #bbf7d0 !important;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+            border-radius: 1.5rem !important;
+        }
+
+        .expl span {
+            color: #065f46 !important;
+        }
+
+        .expl .font-bold {
+            color: #047857 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-brand-blue selection:text-white">
+
+    <header class="bg-brand-navy sticky top-0 z-50 border-b border-slate-700/50 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-center h-24">
+                <div class="flex items-center gap-5">
+                    <div class="relative group">
+                        <div class="absolute -inset-1 bg-brand-blue/50 rounded-full blur opacity-20 group-hover:opacity-60 transition duration-500"></div>
+                        <div class="relative w-12 h-12 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl flex items-center justify-center border border-slate-600 shadow-inner group-hover:scale-105 transition-transform">
+                            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M21,16V14L13,9V3.5A1.5,1.5,0,0,0,11.5,2A1.5,1.5,0,0,0,10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="font-heading font-black text-3xl tracking-tight text-white leading-none">
+                            AFCAT <span class="text-brand-blue">2026</span>
+                        </h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="h-0.5 w-4 bg-brand-blue rounded-full"></span>
+                            <p class="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-bold">Mission Control</p>
+                        </div>
+                    </div>
+                </div>
+
+                <nav class="hidden md:flex items-center gap-10 bg-slate-800/30 px-8 py-3 rounded-full border border-white/5 backdrop-blur-sm">
+                    <button onclick="switchTab('dashboard')" class="nav-item active" data-tab="dashboard">Intel</button>
+                    <button onclick="switchTab('topics')" class="nav-item" data-tab="topics">Grid</button>
+                    <button onclick="switchTab('mock')" class="nav-item" data-tab="mock">Mock Ops</button>
+                </nav>
+                
+                <div class="flex items-center gap-6">
+                    <div class="hidden lg:block text-right">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">System Status</div>
+                        <div class="text-xs font-bold text-green-400 flex items-center justify-end gap-1">
+                            Online <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-6 py-10 w-full">
+
+        <div id="dashboard" class="tab-content active">
+            <div class="relative bg-brand-navy rounded-[2.5rem] p-12 mb-14 overflow-hidden shadow-float group">
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+                <div class="absolute -right-20 top-0 w-[500px] h-full bg-gradient-to-l from-brand-blue/20 to-transparent skew-x-12"></div>
+                
+                <svg class="absolute -bottom-10 -right-10 w-96 h-96 text-white/5 rotate-[-15deg]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21,16V14L13,9V3.5A1.5,1.5,0,0,0,11.5,2A1.5,1.5,0,0,0,10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/>
+                </svg>
+                
+                <div class="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-12">
+                    <div class="max-w-2xl">
+                        <div class="inline-flex items-center gap-2 bg-brand-blue/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-brand-blue/30 mb-6 shadow-glow">
+                            <span class="text-xs font-bold text-white uppercase tracking-widest">AI Prediction Model v3.0</span>
+                        </div>
+                        <h2 class="font-heading text-5xl lg:text-7xl font-black text-white mb-6 leading-tight tracking-tight">
+                            TARGET <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-blue to-brand-sky">180+</span>
+                        </h2>
+                        <p class="text-slate-300 text-xl leading-relaxed font-light">
+                            Analyzing <span id="total-pyq-display" class="text-white font-bold border-b-2 border-brand-blue/50">data stream</span>. 
+                            The system has identified high-probability zones for 2026.
+                        </p>
+                    </div>
+                    
+                    <div class="flex gap-5">
+                        <div class="bg-slate-800/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 text-center min-w-[160px] shadow-2xl">
+                            <div class="text-5xl font-heading font-black text-white mb-2">95%</div>
+                            <div class="text-[11px] text-brand-sky uppercase font-bold tracking-widest">Confidence</div>
+                        </div>
+                        <div class="bg-slate-800/50 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 text-center min-w-[160px] shadow-2xl">
+                            <div class="text-5xl font-heading font-black text-white mb-2">15</div>
+                            <div class="text-[11px] text-brand-sky uppercase font-bold tracking-widest">Priority Topics</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-10">
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-[2rem] shadow-card border border-slate-100 overflow-hidden">
+                        <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-brand-navy text-white flex items-center justify-center font-bold">15</div>
+                                <div>
+                                    <h3 class="font-heading text-2xl font-bold text-brand-navy">High Value Targets</h3>
+                                    <p class="text-xs text-slate-500 font-medium">Prioritize these for maximum ROI.</p>
+                                </div>
+                            </div>
+                            <button onclick="switchTab('topics')" class="bg-brand-navy text-white px-6 py-3 rounded-xl text-xs font-bold shadow-lg hover:bg-slate-800 transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                                Launch Grid
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-slate-50/80 border-b border-slate-100">
+                                    <tr>
+                                        <th class="px-8 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rank</th>
+                                        <th class="px-8 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Topic Name</th>
+                                        <th class="px-8 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Section</th>
+                                        <th class="px-8 py-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Forecast</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="priority-list" class="divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-8">
+                    <div class="bg-white rounded-[2rem] p-8 shadow-card border border-slate-100 relative overflow-hidden group hover:border-green-200 transition">
+                        <div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition">
+                            <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                        </div>
+                        <h3 class="font-heading font-bold text-xl text-slate-800 mb-6 flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                            </span>
+                            Rising Trends
+                        </h3>
+                        <div id="trending-list" class="space-y-4 relative z-10"></div>
+                    </div>
+
+                    <div class="bg-white rounded-[2rem] p-8 shadow-card border border-slate-100 relative overflow-hidden group hover:border-red-200 transition">
+                        <h3 class="font-heading font-bold text-xl text-slate-800 mb-6 flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+                            </span>
+                            Declining
+                        </h3>
+                        <div id="declining-list" class="space-y-4 relative z-10"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="topics" class="tab-content">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+                <div class="relative w-full md:w-96 group">
+                    <input type="text" id="topic-search" placeholder="Locate specific topic..." 
+                        class="w-full pl-14 pr-6 py-4 rounded-2xl bg-white border border-slate-200 focus:outline-none focus:ring-4 focus:ring-brand-blue/10 shadow-sm font-medium transition-all group-hover:border-blue-300"
+                        onkeyup="filterTopics()">
+                    <svg class="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-brand-blue transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                
+                <div class="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto w-full md:w-auto">
+                    <button onclick="filterBySection('all')" class="filter-btn active px-6 py-2.5 rounded-xl text-xs font-bold transition-all bg-brand-navy text-white shadow-md" data-filter="all">All</button>
+                    <button onclick="filterBySection('Verbal Ability')" class="filter-btn px-6 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all" data-filter="Verbal Ability">Verbal</button>
+                    <button onclick="filterBySection('Reasoning')" class="filter-btn px-6 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all" data-filter="Reasoning">Reasoning</button>
+                    <button onclick="filterBySection('General Awareness')" class="filter-btn px-6 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all" data-filter="General Awareness">GK</button>
+                    <button onclick="filterBySection('Numerical Ability')" class="filter-btn px-6 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all" data-filter="Numerical Ability">Maths</button>
+                </div>
+            </div>
+            
+            <div id="topics-grid" class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-20">
+                </div>
+        </div>
+
+        <div id="mock" class="tab-content">
+            <div class="bg-brand-navy rounded-[2.5rem] p-12 shadow-float text-center relative overflow-hidden mb-12">
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] text-white/5" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5A1.5,1.5,0,0,0,11.5,2A1.5,1.5,0,0,0,10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>
+
+                <div class="relative z-10">
+                    <h2 class="font-heading text-4xl font-black text-white mb-4">Exam Simulator</h2>
+                    <p class="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">Real-time operational environment based on the 2026 blueprint.</p>
+                    
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button onclick="filterMockSection('all')" class="mock-btn active px-8 py-3 rounded-xl text-xs font-bold bg-white text-brand-navy shadow-lg transition-all">Full Test</button>
+                        <button onclick="filterMockSection('Verbal Ability')" class="mock-btn px-8 py-3 rounded-xl text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-all">English</button>
+                        <button onclick="filterMockSection('Reasoning')" class="mock-btn px-8 py-3 rounded-xl text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-all">Reasoning</button>
+                        <button onclick="filterMockSection('General Awareness')" class="mock-btn px-8 py-3 rounded-xl text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-all">GK</button>
+                        <button onclick="filterMockSection('Numerical Ability')" class="mock-btn px-8 py-3 rounded-xl text-xs font-bold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-all">Maths</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="mock-questions" class="space-y-8 max-w-4xl mx-auto">
+                </div>
+        </div>
+
+    </main>
+
+    <div id="practice-modal" class="fixed inset-0 bg-brand-navy/90 backdrop-blur-md z-[100] hidden flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-5xl h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+            <div class="px-10 py-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-white to-slate-50 sticky top-0 z-10">
+                <div class="flex items-center gap-6">
+                    <span id="modal-badge" class="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">Topic</span>
+                    <h3 id="modal-topic-title" class="font-heading text-2xl font-black text-brand-navy">Topic Name</h3>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="relative">
+                        <div class="absolute -inset-3 bg-brand-blue/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition"></div>
+                        <div class="relative bg-gradient-to-br from-brand-blue to-brand-sky px-6 py-3 rounded-2xl text-white shadow-lg">
+                            <div class="text-[10px] font-bold uppercase tracking-widest opacity-90">Progress</div>
+                            <div class="text-3xl font-heading font-black" id="progress-counter">0 / 0</div>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="modal-questions" class="flex-1 overflow-y-auto p-10 bg-slate-50/50 space-y-8"></div>
+        </div>
+    </div>
+
+    <script>
+        let appData = {};
+        const STORAGE_KEY = 'afcat_practice_answers';
+
+        // Get API base URL (works on Vercel + localhost)
+        const API_BASE_URL = window.location.origin;
+
+        // Get saved answers from localStorage
+        function getSavedAnswers() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            return saved ? JSON.parse(saved) : {};
+        }
+
+        // Save answer to localStorage
+        function saveAnswer(questionId, answer) {
+            const answers = getSavedAnswers();
+            answers[questionId] = answer;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+        }
+
+        // Get saved answer for a question
+        function getSavedAnswer(questionId) {
+            const answers = getSavedAnswers();
+            return answers[questionId];
+        }
+
+        async function init() {
+            try {
+                if (typeof window.dashboardData !== 'undefined') {
+                    appData = window.dashboardData;
+                } else {
+                    const res = await fetch('data.js');
+                    const text = await res.text();
+                    // Fix: Strip JS variable declaration to parse pure JSON if fallback needed
+                    const jsonStr = text.replace(/^const\s+dashboardData\s*=\s*/, '').replace(/;\s*$/, '');
+                    appData = JSON.parse(jsonStr);
+                }
+
+                if(!appData) throw new Error("No Data");
+
+                if(document.getElementById('total-pyq-display')) {
+                    document.getElementById('total-pyq-display').textContent = (appData.question_bank?.length || 0) + " Questions";
+                }
+
+                renderDashboard();
+                renderLibrary();
+                loadMockQuestions();
+            } catch(e) { console.error("Init Error", e); }
+        }
+
+        // --- DASHBOARD ---
+        function renderDashboard() {
+            const preds = appData.predictions?.ml_predictions || [];
+            
+            // TOP 15
+            const topTopics = [...preds]
+                .filter(p => (p.Predicted_Questions || p.predicted_count) > 0)
+                .sort((a,b) => getCount(b) - getCount(a))
+                .slice(0, 15);
+
+            document.getElementById('priority-list').innerHTML = topTopics.map((t, i) => {
+                const count = getCount(t);
+                const section = t.Section || t.section || 'General';
+                const colors = getSectionColors(section);
+                const name = t.Topic || t.topic_name;
+                
+                return `
+                <tr class="hover:bg-slate-50 transition-colors cursor-pointer group border-b border-slate-50 last:border-0" onclick="openPractice('${name}', '${section}')">
+                    <td class="px-8 py-5 w-24">
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 font-heading font-bold flex items-center justify-center text-sm group-hover:bg-brand-navy group-hover:text-white transition-all">${i+1}</div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <div class="font-bold text-brand-navy text-lg group-hover:text-brand-blue transition-colors">${name}</div>
+                    </td>
+                    <td class="px-8 py-5">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${colors.badge}">
+                            ${section}
+                        </span>
+                    </td>
+                    <td class="px-8 py-5 text-right">
+                        <div class="flex items-center justify-end gap-3">
+                            <div class="w-24 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                                <div class="h-full ${colors.bar}" style="width: ${Math.min((count/6)*100, 100)}%"></div>
+                            </div>
+                            <span class="font-heading font-black text-xl text-brand-navy">${count.toFixed(1)}</span>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+
+            // TRENDS
+            const trending = appData.predictions?.rising_topics || [];
+            document.getElementById('trending-list').innerHTML = trending.slice(0,5).map(t => {
+                const name = t.Topic || t.topic_name;
+                return `
+                <div class="flex justify-between items-center p-4 rounded-2xl bg-slate-50 border border-slate-100 cursor-pointer hover:border-green-300 hover:bg-white transition-all group" onclick="openPractice('${name}')">
+                    <span class="text-sm font-bold text-slate-700 group-hover:text-brand-navy">${name}</span>
+                    <span class="text-xs font-bold text-green-600 bg-green-100 px-3 py-1 rounded-full">+${parseInt(t.growth||20)}%</span>
+                </div>
+            `}).join('');
+
+            const declining = appData.predictions?.declining_topics || [];
+            document.getElementById('declining-list').innerHTML = declining.slice(0,5).map(t => {
+                const name = t.Topic || t.topic_name;
+                return `
+                <div class="flex justify-between items-center p-4 rounded-2xl bg-slate-50 border border-slate-100 cursor-pointer hover:border-red-300 hover:bg-white transition-all group" onclick="openPractice('${name}')">
+                    <span class="text-sm font-bold text-slate-700 group-hover:text-brand-navy">${name}</span>
+                    <span class="text-xs font-bold text-red-500 bg-red-100 px-3 py-1 rounded-full">${parseInt(t.decline||-10)}%</span>
+                </div>
+            `}).join('');
+        }
+
+        // --- GRID RENDERER (FIXED) ---
+        function renderLibrary(filter = 'all') {
+            const container = document.getElementById('topics-grid');
+            const preds = appData.predictions?.ml_predictions || [];
+            
+            const filtered = filter === 'all' 
+                ? preds 
+                : preds.filter(p => {
+                    const s = (p.Section || p.section || '').toLowerCase();
+                    return s.includes(filter.toLowerCase()) || (filter.includes('Math') && s.includes('numerical'));
+                });
+
+            filtered.sort((a,b) => getCount(b) - getCount(a));
+
+            container.innerHTML = filtered.map(t => {
+                const name = t.Topic || t.topic_name;
+                const count = getCount(t);
+                const section = t.Section || t.section || 'General';
+                const colors = getSectionColors(section);
+
+                return `
+                <div class="topic-card group cursor-pointer" onclick="openPractice('${name}', '${section}')">
+                    <svg class="jet-bg text-slate-900" fill="currentColor" viewBox="0 0 24 24"><path d="M21,16V14L13,9V3.5A1.5,1.5,0,0,0,11.5,2A1.5,1.5,0,0,0,10,3.5V9L2,14V16L10,13.5V19L8,20.5V22L11.5,21L15,22V20.5L13,19V13.5L21,16Z"/></svg>
+                    
+                    <div style="color: ${colors.hex}" class="h-1 w-full absolute top-0 left-0 bg-current"></div>
+                    
+                    <div class="p-8 flex flex-col h-full relative z-10">
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="${colors.badge} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                ${getSectionShort(section)}
+                            </span>
+                            ${(t.Is_Core || t.is_core) ? '<span class="text-brand-blue">★</span>' : ''}
+                        </div>
+                        
+                        <h3 class="font-heading font-black text-2xl text-brand-navy mb-auto leading-tight group-hover:text-brand-blue transition-colors line-clamp-3">
+                            ${name}
+                        </h3>
+                        
+                        <div class="flex items-center justify-between pt-6 border-t border-slate-50 mt-6">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Prediction</span>
+                            <div class="flex items-baseline gap-1">
+                                <span class="font-heading font-black text-4xl text-brand-navy group-hover:text-brand-blue transition-colors">${count.toFixed(1)}</span>
+                                <span class="text-xs font-bold text-slate-400 uppercase">Qs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // --- MOCK RENDERER ---
+        function loadMockQuestions(filterSec = 'all') {
+            const container = document.getElementById('mock-questions');
+            const allQuestions = appData.mock_test?.all_questions || [];
+            
+            const filtered = filterSec === 'all' 
+                ? allQuestions 
+                : allQuestions.filter(q => {
+                    const s = (q.section || '').toLowerCase();
+                    if (filterSec === 'Numerical Ability') return s.includes('numerical');
+                    return s.includes(filterSec.toLowerCase());
+                });
+
+            if(filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200 text-slate-400 font-bold">No questions found for this section.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map((q, i) => createQuestionCard(q, i+1)).join('');
+        }
+
+        // --- FILTER HANDLERS ---
+        window.filterBySection = function(sec) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-brand-navy', 'text-white');
+                b.classList.add('text-slate-500', 'hover:bg-slate-50');
+            });
+            const active = document.querySelector(`[data-filter="${sec}"]`);
+            if(active) {
+                active.classList.remove('text-slate-500', 'hover:bg-slate-50');
+                active.classList.add('bg-brand-navy', 'text-white');
+            }
+            renderLibrary(sec);
+        }
+
+        window.filterMockSection = function(sec) {
+            document.querySelectorAll('.mock-btn').forEach(b => {
+                b.classList.remove('bg-brand-navy', 'text-white');
+                b.classList.add('bg-white/5', 'text-slate-300');
+            });
+            event.target.classList.remove('bg-white/5', 'text-slate-300');
+            event.target.classList.add('bg-brand-navy', 'text-white');
+            loadMockQuestions(sec);
+        }
+
+        // --- UTILS ---
+        window.openPractice = function(topicName, section) {
+            const modal = document.getElementById('practice-modal');
+            const container = document.getElementById('modal-questions');
+            document.getElementById('modal-topic-title').textContent = topicName;
+
+            const badge = document.getElementById('modal-badge');
+            badge.textContent = section || 'Topic';
+            const colors = getSectionColors(section || '');
+            badge.className = `px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${colors.badge}`;
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            const slug = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const target = slug(topicName);
+
+            const questions = (appData.question_bank || []).filter(q => {
+                const qt = slug(q.topic_name || q.topic || q.topic_display || '');
+                const qc = slug(q.topic_code || '');
+                return qt.includes(target) || target.includes(qt) || qc === target;
+            });
+
+            if(questions.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center py-32 text-center">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-4xl mb-6">🔍</div>
+                    <h3 class="font-heading font-black text-2xl text-brand-navy mb-2">No specific questions found</h3>
+                    <p class="text-slate-500">Try searching for a related topic.</p>
+                </div>`;
+            } else {
+                container.innerHTML = questions.map((q, i) => createQuestionCard(q, i+1)).join('');
+
+                // Update progress counter
+                updateProgressCounter();
+
+                // Scroll to first unanswered question
+                setTimeout(() => {
+                    const firstUnanswered = container.querySelector('[data-answered="false"]');
+                    if(firstUnanswered) {
+                        firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+            }
+        }
+
+        function updateProgressCounter() {
+            const container = document.getElementById('modal-questions');
+            const totalCards = container.querySelectorAll('[data-question-id]').length;
+            const answeredCards = container.querySelectorAll('[data-answered="true"]').length;
+            document.getElementById('progress-counter').textContent = `${answeredCards} / ${totalCards}`;
+        }
+
+        window.closeModal = () => {
+            document.getElementById('practice-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function createQuestionCard(q, num) {
+            const colors = getSectionColors(q.section);
+            let options = q.choices || q.options || [];
+            let correctAns = q.answer;
+
+            // Generate unique question ID
+            const qId = `${q.topic_code || q.topic_name || q.topic}_${q.year || 'pyq'}_${num}`.replace(/\s+/g, '_');
+            const savedAnswer = getSavedAnswer(qId);
+            const isAnswered = !!savedAnswer;
+
+            return `
+            <div class="bg-white rounded-3xl p-8 shadow-card border border-slate-100" data-question-id="${qId}" data-answered="${isAnswered}">
+                <div class="flex justify-between items-start mb-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-heading font-black ${isAnswered ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'}">
+                            ${isAnswered ? '✓' : `Q${num}`}
+                        </div>
+                        <span class="${colors.badge} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">${q.topic_name || q.topic}</span>
+                    </div>
+                    <span class="bg-brand-navy/5 text-brand-navy text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest border border-brand-navy/10">${q.year || 'PYQ'}</span>
+                </div>
+
+                <p class="text-xl font-bold text-brand-navy mb-10 leading-relaxed font-heading">${q.question_text || q.question}</p>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    ${options.map((opt, idx) => {
+                        const val = typeof opt === 'object' ? opt.text : opt;
+                        const key = typeof opt === 'object' ? opt.key : String.fromCharCode(65+idx);
+                        const isCorrect = (val === correctAns) || (key === correctAns);
+                        const wasSaved = savedAnswer === key;
+
+                        return `<button onclick="check(this, ${isCorrect}, '${qId}', '${key}')" class="option-btn w-full text-left p-5 rounded-2xl text-sm font-bold text-slate-600 relative group flex items-center gap-4 transition-all ${wasSaved ? (isCorrect ? 'option-correct' : 'option-wrong') : 'hover:border-brand-blue'}" data-answer-key="${key}">
+                            <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 text-[10px] flex items-center justify-center font-black group-hover:bg-white transition-all">${key}</span>
+                            <span class="flex-1">${val}</span>
+                        </button>`;
+                    }).join('')}
+                </div>
+                <div class="mt-6 ${isAnswered ? 'flex' : 'hidden'} expl p-6 bg-green-50 rounded-2xl text-sm text-green-800 border border-green-100 items-start gap-4 animate-fade-in">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-[10px] font-black uppercase tracking-widest mb-1 opacity-60">Verified Answer</span>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-lg">${correctAns && correctAns !== 'undefined' ? correctAns : (options && options[0] ? '(AI will identify)' : 'N/A')}</span>
+                        </div>
+                    </div>
+                    <button onclick="getAIExplanation(this, '${q.question_text || q.question}', '${correctAns}', '${q.section}', '${q.topic_name || q.topic}')" class="ai-explain-btn px-4 py-2 text-white text-xs font-bold uppercase tracking-wide rounded-xl flex-shrink-0 relative">
+                        <span class="ai-explain-btn-text">
+                            <span class="ai-explain-btn-icon">✨</span>
+                            <span>AI Explain</span>
+                        </span>
+                    </button>
+                </div>
+                <div class="mt-6 hidden ai-expl p-6 animate-fade-in">
+                    <span class="block text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">💡 AI-Powered Explanation</span>
+                    <div class="text-sm leading-relaxed ai-expl-content">Loading...</div>
+                </div>
+            </div>
+            `;
+        }
+
+        // Get AI explanation from backend
+        async function getAIExplanation(btn, question, answer, section, topic) {
+            const card = btn.closest('[data-question-id]');
+            const explDiv = card.querySelector('.ai-expl');
+            const explContent = card.querySelector('.ai-expl-content');
+
+            // Extract options from the option buttons in the card
+            const optionButtons = card.querySelectorAll('.option-btn');
+            const options = [];
+            optionButtons.forEach(btn => {
+                const keySpan = btn.querySelector('span:first-child');
+                const textSpan = btn.querySelector('span:nth-child(2)');
+                if (keySpan && textSpan) {
+                    options.push(`${keySpan.textContent}. ${textSpan.textContent}`);
+                }
+            });
+
+            console.log('📤 Extracted options:', options);
+            console.log('📤 Sending to backend:', { question, answer, section, topic, optionsCount: options.length });
+
+            explDiv.classList.remove('hidden');
+            explContent.innerHTML = '<span class="opacity-60">⏳ Getting AI shortcut explanation...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/explain`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answer,
+                        section: section,
+                        topic: topic,
+                        options: options
+                    })
+                });
+
+                const data = await response.json();
+                console.log('📥 Backend response:', data, 'Status:', response.status);
+
+                if(response.ok && data.explanation) {
+                    let explanation = data.explanation;
+
+                    // Extract correct option if not provided
+                    const optionMatch = explanation.match(/CORRECT OPTION:\s*([A-D])/i);
+                    if (optionMatch) {
+                        const correctOpt = optionMatch[1];
+                        console.log('✅ Extracted correct option:', correctOpt);
+
+                        // Update the Verified Answer section
+                        const verifiedAnswerDiv = card.querySelector('.expl');
+                        if (verifiedAnswerDiv) {
+                            const answerSpan = verifiedAnswerDiv.querySelector('.font-bold.text-lg');
+                            if (answerSpan) {
+                                // Find the option text
+                                const optionBtn = card.querySelector(`.option-btn [data-answer-key="${correctOpt}"]`)?.closest('.option-btn');
+                                if (optionBtn) {
+                                    const optionText = optionBtn.querySelector('span:nth-child(2)').textContent;
+                                    answerSpan.textContent = `${correctOpt}. ${optionText}`;
+                                    answerSpan.className = 'font-bold text-lg text-green-600';
+                                }
+                            }
+                        }
+
+                        // Highlight the correct option button
+                        const buttons = card.querySelectorAll('.option-btn');
+                        buttons.forEach(btn => {
+                            const keySpan = btn.querySelector('span:first-child');
+                            if (keySpan && keySpan.textContent === correctOpt) {
+                                btn.classList.add('option-correct');
+                                btn.classList.remove('option-wrong');
+                            }
+                        });
+                    }
+
+                    // Remove the correct option line from explanation display
+                    explanation = explanation.replace(/CORRECT OPTION:\s*[A-D]/i, '').trim();
+                    explContent.innerHTML = explanation.replace(/\n/g, '<br>');
+                } else {
+                    const errorMsg = data.error || data.details || 'Could not generate explanation';
+                    explContent.innerHTML = '❌ ' + errorMsg;
+                }
+            } catch(e) {
+                console.error('AI Explanation Error:', e);
+                explContent.innerHTML = '❌ Error: ' + e.message;
+            }
+        }
+
+        window.check = function(btn, correct, questionId, answerKey) {
+            const card = btn.closest('[data-question-id]');
+            const btns = card.querySelectorAll('.option-btn');
+
+            // Remove all previous selections
+            btns.forEach(b => {
+                b.classList.remove('option-correct', 'option-wrong');
+            });
+
+            // Save to localStorage
+            saveAnswer(questionId, answerKey);
+
+            // Apply new selection styling
+            if(correct) btn.classList.add('option-correct');
+            else btn.classList.add('option-wrong');
+
+            // Show explanation
+            card.querySelector('.expl').classList.remove('hidden');
+
+            // Update question badge - find the badge element in the card
+            const questionBadge = card.querySelector('div.w-10');
+            if(questionBadge) {
+                questionBadge.innerHTML = '✓';
+                questionBadge.className = 'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-heading font-black bg-green-100 text-green-600';
+            }
+
+            // Update the card's data-answered attribute
+            card.setAttribute('data-answered', 'true');
+
+            // Update counter
+            updateProgressCounter();
+        }
+
+        // --- UTILS ---
+        function getCount(obj) { return obj.Predicted_Questions || obj.predicted_count || 0; }
+        
+        function getSectionColors(sec) {
+            sec = (sec || '').toLowerCase();
+            if(sec.includes('verbal')) return { badge: 'bg-brand-blue/10 text-brand-blue', bar: 'bg-brand-blue', hex: '#3b82f6' };
+            if(sec.includes('reasoning')) return { badge: 'bg-purple-100 text-purple-700', bar: 'bg-purple-500', hex: '#a855f7' };
+            if(sec.includes('general')) return { badge: 'bg-green-100 text-green-700', bar: 'bg-green-500', hex: '#22c55e' };
+            return { badge: 'bg-orange-100 text-orange-700', bar: 'bg-orange-500', hex: '#f97316' };
+        }
+        
+        function getSectionShort(sec) {
+            if(!sec) return 'Topic';
+            if(sec.includes('Verbal')) return 'Verbal';
+            if(sec.includes('Reasoning')) return 'Logic';
+            if(sec.includes('General')) return 'GK';
+            return 'Math';
+        }
+
+        window.switchTab = function(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.filterTopics = function() {
+            const val = document.getElementById('topic-search').value.toLowerCase();
+            const cards = document.getElementById('topics-grid').children;
+            for(let card of cards) {
+                const txt = card.textContent.toLowerCase();
+                card.style.display = txt.includes(val) ? 'flex' : 'none';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
